@@ -1,0 +1,50 @@
+-- STEP 1: Create temporary table with basic valid data
+CREATE TABLE temp_passo1 AS
+SELECT *
+FROM dynamic_supply_chain_logistics_dataset
+WHERE 
+-- essential data can't be null and empty strings need to be removed
+    Timestamp IS NOT NULL
+    AND Vehicle_GPS_Latitude IS NOT NULL
+    AND Vehicle_GPS_Longitude IS NOT NULL
+    AND Timestamp != ''
+    AND Vehicle_GPS_Latitude != ''
+    AND Vehicle_GPS_Longitude != '';
+
+-- STEP 2: After the essential data got the nulls and empty strings removed, we'll remove the duplicates that are obivous
+CREATE TABLE temp_passo2 AS
+SELECT DISTINCT *
+FROM temp_passo1;
+
+-- STEP 3: Set the scales, one at the time
+CREATE TABLE temp_passo3 AS
+SELECT 
+    Timestamp,
+    Vehicle_GPS_Latitude,
+    Vehicle_GPS_Longitude,
+    CASE 
+        WHEN Traffic_Congestion_Level < 0 THEN 0
+        WHEN Traffic_Congestion_Level > 10 THEN 10
+        ELSE Traffic_Congestion_Level
+    END as Traffic_Congestion_Level,
+    CASE 
+        WHEN Fuel_Consumption_Rate < 0 THEN 0 -- Fuel can't be negative
+        ELSE Fuel_Consumption_Rate
+    END as Fuel_Consumption_Rate
+FROM temp_passo2;
+
+-- STEP 4: Remove rows with invalid coordinates
+CREATE TABLE dynamic_supply_chain_limpo AS
+SELECT *
+FROM temp_passo3
+WHERE 
+    -- Use only coordinates within reasonable limits
+    Vehicle_GPS_Latitude BETWEEN -90 AND 90
+    AND Vehicle_GPS_Longitude BETWEEN -180 AND 180
+    -- Cannot be (0,0)
+    AND NOT (Vehicle_GPS_Latitude = 0 AND Vehicle_GPS_Longitude = 0);
+
+-- STEP 5: Clean up temporary tables
+DROP TABLE temp_passo1;
+DROP TABLE temp_passo2;
+DROP TABLE temp_passo3;
