@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Dataset loading
-df = pd.read_csv('seu_arquivo.csv')
+df = pd.read_csv('dynamic_supply_chain_logistics_dataset.csv')
 
 # --- STEP 1: To remove empty strings and null values, initially we do a conversion ---
 df[['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude']] = \
@@ -30,5 +30,5 @@ not_zero_island = ~((df['Vehicle_GPS_Latitude'] == 0) & (df['Vehicle_GPS_Longitu
 df_limpo = df[valid_lat & valid_lon & not_zero_island].copy()
 
 #Final Result
-print(f"Dados originais: {len(df)}")
-print(f"Dados após limpeza: {len(df_limpo)}")
+print(f"Original Data: {len(df)}")
+print(f"Cleaned Data: {len(df_limpo)}")
