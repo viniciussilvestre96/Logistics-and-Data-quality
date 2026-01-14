@@ -1,0 +1,36 @@
+import pandas as pd
+import numpy as np
+
+# Carregar o dataset
+df = pd.read_csv('seu_arquivo.csv')
+
+# --- STEP 1: Remover nulos e strings vazias em colunas essenciais ---
+# No pandas, '' não é lido como NaN automaticamente, então primeiro convertemos
+df[['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude']] = \
+    df[['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude']].replace('', np.nan)
+
+# remover do dataframe todos os itens que são nulos
+df = df.dropna(subset=['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude'])
+
+# --- STEP 2: Remover duplicatas óbvias (SELECT DISTINCT) ---
+df = df.drop_duplicates()
+
+# --- STEP 3: Ajustar escalas (CASE WHEN) ---
+# Usamos o método .clip() que é perfeito para limitar valores entre um mínimo e um máximo
+df['Traffic_Congestion_Level'] = df['Traffic_Congestion_Level'].clip(lower=0, upper=10)
+
+# Para o combustível, garantimos que não haja valores negativos
+df['Fuel_Consumption_Rate'] = df['Fuel_Consumption_Rate'].clip(lower=0)
+
+# --- STEP 4: Filtrar coordenadas inválidas ---
+# Criamos máscaras booleanas para filtrar a latitude e longitude
+valid_lat = df['Vehicle_GPS_Latitude'].between(-90, 90)
+valid_lon = df['Vehicle_GPS_Longitude'].between(-180, 180)
+not_zero_island = ~((df['Vehicle_GPS_Latitude'] == 0) & (df['Vehicle_GPS_Longitude'] == 0))
+
+# Aplicamos todos os filtros de uma vez
+df_limpo = df[valid_lat & valid_lon & not_zero_island].copy()
+
+# Resultado final
+print(f"Dados originais: {len(df)}")
+print(f"Dados após limpeza: {len(df_limpo)}")
