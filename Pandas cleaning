@@ -21,11 +21,9 @@ df['Traffic_Congestion_Level'] = df['Traffic_Congestion_Level'].clip(lower=0, up
 df['Fuel_Consumption_Rate'] = df['Fuel_Consumption_Rate'].clip(lower=0)
 
 # --- STEP 4: To filter invalid coordinates ---
-
 valid_lat = df['Vehicle_GPS_Latitude'].between(-90, 90)
 valid_lon = df['Vehicle_GPS_Longitude'].between(-180, 180)
 not_zero_island = ~((df['Vehicle_GPS_Latitude'] == 0) & (df['Vehicle_GPS_Longitude'] == 0))
-
 
 df_limpo = df[valid_lat & valid_lon & not_zero_island].copy()
 
