@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 1. The dataframe was already cleaned by pandas/SQL by df_limpo, so no need to do it again
+
 
 
 # Time ordering in order to guarantee the continuity on to guarantee time series graphs
