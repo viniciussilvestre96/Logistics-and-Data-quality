@@ -1,32 +1,46 @@
 import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Dataset loading
-df = pd.read_csv('dynamic_supply_chain_logistics_dataset.csv')
+# 1. The dataframe was already cleaned by pandas/SQL by df_limpo, so no need to do it again
 
-# --- STEP 1: To remove empty strings and null values, initially we do a conversion ---
-df[['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude']] = \
-    df[['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude']].replace('', np.nan)
 
-# Remove from dataframe all items that are null 
-df = df.dropna(subset=['Timestamp', 'Vehicle_GPS_Latitude', 'Vehicle_GPS_Longitude'])
+# Time ordering in order to guarantee the continuity on to guarantee time series graphs
+df_limpo = df_limpo.sort_values('timestamp')
 
-# --- STEP 2: Remove the duplicates that look obvious ---
-df = df.drop_duplicates()
+# 2. Risk Distribution
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df_limpo, x='risk_classification', palette='viridis', 
+              order=df_limpo['risk_classification'].value_counts().index)
+plt.title('Distribuição de Classificação de Risco')
+plt.savefig('risk_distribution.png')
 
-# --- STEP 3: Adjusting Scales ---
-df['Traffic_Congestion_Level'] = df['Traffic_Congestion_Level'].clip(lower=0, upper=10)
+# 3. Correlation Matrix
+numerical_cols = df_limpo.select_dtypes(include=['float64']).columns
+corr_matrix = df_limpo[numerical_cols].corr()
 
-# Command line to guarantee that fuel consumption isn't a negative value
-df['Fuel_Consumption_Rate'] = df['Fuel_Consumption_Rate'].clip(lower=0)
+plt.figure(figsize=(12, 10))
+sns.heatmap(corr_matrix, cmap='coolwarm', annot=False)
+plt.title('Mapa de Calor de Correlações Logísticas')
+plt.savefig('correlation_heatmap.png')
 
-# --- STEP 4: To filter invalid coordinates ---
-valid_lat = df['Vehicle_GPS_Latitude'].between(-90, 90)
-valid_lon = df['Vehicle_GPS_Longitude'].between(-180, 180)
-not_zero_island = ~((df['Vehicle_GPS_Latitude'] == 0) & (df['Vehicle_GPS_Longitude'] == 0))
+# 4.  Impact of Traffic on Delays
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df_limpo.sample(1000), x='traffic_congestion_level', 
+                y='delivery_time_deviation', hue='risk_classification', alpha=0.6)
+plt.title('Congestionamento vs. Desvio no Tempo de Entrega')
+plt.savefig('congestion_vs_delay.png')
 
-df_limpo = df[valid_lat & valid_lon & not_zero_island].copy()
 
-#Final Result
-print(f"Original Data: {len(df)}")
-print(f"Cleaned Data: {len(df_limpo)}")
+#5. Temporal Trend of Delays
+df_temporal = df_limpo.set_index('timestamp')
+monthly_trend = df_temporal['delivery_time_deviation'].resample('M').mean()
+
+plt.figure(figsize=(12, 6))
+monthly_trend.plot(marker='o', color='darkblue', grid=True)
+plt.title('Tendência Mensal de Atrasos Médios')
+plt.ylabel('Horas de Desvio')
+plt.xlabel('Data')
+plt.savefig('time_trend_deviation.png')
+
+plt.tight_layout()
